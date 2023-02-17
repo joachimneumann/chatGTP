@@ -50,6 +50,18 @@ class Value:
 
         return out
 
+    def __truediv__(self, other): # self / other
+        # return self * other**-1
+        other = other if isinstance(other, Value) else Value(other)
+        out = Value(self.data / other.data, (self, other), f'/')
+
+        def _backward():
+            self.grad +=  out.grad / other.data
+            other.grad += self.data * -other.data ** -2 * out.grad
+        out._backward = _backward
+        return out
+
+
     def relu(self):
         out = Value(0 if self.data < 0 else self.data, (self,), 'ReLU')
 
@@ -110,11 +122,9 @@ class Value:
     def __rmul__(self, other): # other * self
         return self * other
 
-    def __truediv__(self, other): # self / other
-        return self * other**-1
-
     def __rtruediv__(self, other): # other / self
-        return other * self**-1
+        # return other * self**-1
+        return (Value(1.0) / self) * other
 
     def __repr__(self):
 #         return f"Value(data={self.data}, grad={self.grad})"
@@ -146,9 +156,9 @@ def draw_dot(root):
 
 
 
-a = Value(-2.0, label='a')
-b = Value(3.0, label='b')
-c = a / b
+a = Value(-20.0, label='a')
+b = Value(30.0, label='b')
+c = 100.0 / b; c.label='c'
 
 c.backward()
 draw_dot(c).view()
